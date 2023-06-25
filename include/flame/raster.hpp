@@ -1,6 +1,8 @@
 #pragma once
+#include <af/half.h>
 #include <arrayfire.h>
 #include <functional>
+#include <type_traits>
 
 #define FLAME_CPP_TO_AF(cpp_t, af_dtype)                     \
     template<>                                               \
@@ -10,6 +12,9 @@
     }
 
 namespace flame {
+
+using half = af::half;
+
 namespace traits {
 
 template<typename F, typename... Args>
@@ -30,7 +35,11 @@ struct extent
     double ymax;
 };
 
-template<typename T>
+template<
+  typename T,
+  std::enable_if_t<
+    std::is_arithmetic<T>::value || std::is_same<T, half>::value,
+    bool> = true>
 struct raster_base
 {
     using value_type      = T;
@@ -94,6 +103,7 @@ struct raster_base
     size_type                  m_srid;
 };
 
+FLAME_CPP_TO_AF(half, af::dtype::f16);
 FLAME_CPP_TO_AF(float, af::dtype::f32);
 FLAME_CPP_TO_AF(double, af::dtype::f64);
 FLAME_CPP_TO_AF(short, af::dtype::s16);
@@ -105,6 +115,17 @@ FLAME_CPP_TO_AF(unsigned long, af::dtype::u64);
 
 } // namespace detail
 
+using raster_f64 = detail::raster_base<double>;
+using raster_f32 = detail::raster_base<float>;
+using raster_f16 = detail::raster_base<af::half>;
+using raster_i64 = detail::raster_base<long>;
+using raster_i32 = detail::raster_base<int>;
+using raster_i16 = detail::raster_base<short>;
+using raster_u64 = detail::raster_base<unsigned long>;
+using raster_u32 = detail::raster_base<unsigned int>;
+using raster_u16 = detail::raster_base<unsigned short>;
+
+// Typical numeric raster
 using raster = detail::raster_base<double>;
 
 } // namespace flame
